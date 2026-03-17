@@ -1,0 +1,42 @@
+# ROS2 기반 KOBOT 시뮬레이터 이미지
+# 1 컨테이너 = 1 KOBOT 시뮬레이터
+# - ROS2 Humble 기반
+# - 센서 데이터 발행 (GPS, IMU, LiDAR, System Status)
+# - MQTT Bridge (ROS2 ↔ MQTT 변환)
+# - FFmpeg 카메라 스트리밍 (3채널)
+
+FROM ros:humble-ros-base
+
+# 작업 디렉토리 설정
+WORKDIR /root
+
+# 필수 패키지 설치
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-colcon-common-extensions \
+    ffmpeg \
+    vim \
+    curl \
+    netcat \
+    mosquitto-clients \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 의존성 설치
+RUN pip3 install --no-cache-dir \
+    typing-extensions==4.8.0 \
+    aiomqtt==2.0.1 \
+    pyyaml==6.0.1 \
+    numpy==1.24.3 \
+    scipy==1.10.1
+
+# ROS2 환경 자동 로드 설정
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+
+# 작업 디렉토리 설정
+WORKDIR /root
+
+# Entrypoint 스크립트는 docker-compose에서 volume으로 마운트
+# ROS2 워크스페이스도 volume으로 마운트하여 개발 편의성 향상
+
+# 기본 명령어
+CMD ["/bin/bash"]

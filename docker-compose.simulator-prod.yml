@@ -1,0 +1,137 @@
+name: kobot-sim-prod
+
+services:
+  # KOBOT 시뮬레이터 #6 - 부산항 순찰 (프로덕션)
+  kobot-sim-prod-006:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.kobot
+    container_name: kobot-sim-prod-006
+    hostname: kobot-sim-prod-006
+    env_file:
+      - .env.simulator.prod
+    volumes:
+      # ROS2 워크스페이스 (개발 편의성)
+      - ./ros2_ws:/root/ros2_ws
+      # MQTT 브릿지 코드
+      - ./mqtt_bridge:/root/mqtt_bridge
+      # 카메라 스트리밍 스크립트
+      - ./camera:/root/camera
+      # 시나리오 설정 파일
+      - ./scenarios:/root/scenarios
+      # 설정 파일
+      - ./config:/root/config
+      # 스타트업 스크립트
+      - ./scripts:/root/scripts
+    networks:
+      - ondeviceai-simulator_kobot-network
+    restart: unless-stopped
+    command: /bin/bash /root/scripts/start_kobot.sh 006
+
+  # KOBOT 시뮬레이터 #7 - 부산항 남항 정찰
+  kobot-sim-prod-007:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.kobot
+    container_name: kobot-sim-prod-007
+    hostname: kobot-sim-prod-007
+    env_file:
+      - .env.simulator.prod
+    volumes:
+      - ./ros2_ws:/root/ros2_ws
+      - ./mqtt_bridge:/root/mqtt_bridge
+      - ./camera:/root/camera
+      - ./scenarios:/root/scenarios
+      - ./config:/root/config
+      - ./scripts:/root/scripts
+    networks:
+      - ondeviceai-simulator_kobot-network
+    restart: unless-stopped
+    command: /bin/bash /root/scripts/start_kobot.sh 007
+
+  # KOBOT 시뮬레이터 #8 - 정박 (배터리 충전 시뮬레이션)
+  kobot-sim-prod-008:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.kobot
+    container_name: kobot-sim-prod-008
+    hostname: kobot-sim-prod-008
+    env_file:
+      - .env.simulator.prod
+    volumes:
+      - ./ros2_ws:/root/ros2_ws
+      - ./mqtt_bridge:/root/mqtt_bridge
+      - ./camera:/root/camera
+      - ./scenarios:/root/scenarios
+      - ./config:/root/config
+      - ./scripts:/root/scripts
+    networks:
+      - ondeviceai-simulator_kobot-network
+    restart: unless-stopped
+    command: /bin/bash /root/scripts/start_kobot.sh 008
+
+  # KOBOT 시뮬레이터 #9 - 해양 쓰레기 수거 미션
+  kobot-sim-prod-009:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.kobot
+    container_name: kobot-sim-prod-009
+    hostname: kobot-sim-prod-009
+    env_file:
+      - .env.simulator.prod
+    volumes:
+      - ./ros2_ws:/root/ros2_ws
+      - ./mqtt_bridge:/root/mqtt_bridge
+      - ./camera:/root/camera
+      - ./scenarios:/root/scenarios
+      - ./config:/root/config
+      - ./scripts:/root/scripts
+    networks:
+      - ondeviceai-simulator_kobot-network
+    restart: unless-stopped
+    command: /bin/bash /root/scripts/start_kobot.sh 009
+
+  # KOBOT 시뮬레이터 #10 - 야간 순찰
+  kobot-sim-prod-010:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.kobot
+    container_name: kobot-sim-prod-010
+    hostname: kobot-sim-prod-010
+    env_file:
+      - .env.simulator.prod
+    volumes:
+      - ./ros2_ws:/root/ros2_ws
+      - ./mqtt_bridge:/root/mqtt_bridge
+      - ./camera:/root/camera
+      - ./scenarios:/root/scenarios
+      - ./config:/root/config
+      - ./scripts:/root/scripts
+    networks:
+      - ondeviceai-simulator_kobot-network
+    restart: unless-stopped
+    command: /bin/bash /root/scripts/start_kobot.sh 010
+
+networks:
+  ondeviceai-simulator_kobot-network:
+    # 시뮬레이터 전용 네트워크 (.env.simulator.prod의 MQTT_BROKER/MEDIAMTX_HOST로 외부 연결)
+    driver: bridge
+# ============================================================================
+# KOBOT 시뮬레이터 사용법 (프로덕션 서버 연결)
+# ============================================================================
+#
+# 사전 준비:
+#   1. .env.simulator.prod 파일에 관제 서버 IP/도메인 설정
+#
+# 시뮬레이터 실행:
+#   1. 전체 5대 시작:
+#      docker compose -f docker-compose.simulator-prod.yml up -d
+#
+#   2. 특정 KOBOT만 시작 (예: #6번):
+#      docker compose -f docker-compose.simulator-prod.yml up -d kobot-sim-prod-006
+#
+#   3. 로그 확인:
+#      docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006
+#
+#   4. 전체 중지:
+#      docker compose -f docker-compose.simulator-prod.yml down
