@@ -161,6 +161,8 @@ docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006
 
 ### System Status (`{namespace}/status`)
 
+> **참고**: Status 토픽의 항목과 포맷은 아직 협의 중이며, 현재 시뮬레이터에서는 배터리 잔량만 임시로 발행하고 있습니다. 항목이 확정되면 업데이트 예정입니다.
+
 발행 주기: 환경변수 `STATUS_RATE`로 조정 (기본 0.2Hz = 5초당 1회)
 
 ```json
