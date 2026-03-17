@@ -67,13 +67,30 @@ rm -f "$ENV_FILE.bak"
 echo ""
 echo "=== 설정 완료 ==="
 echo ""
-echo "시뮬레이터 시작:"
-echo "  docker compose -f docker-compose.simulator-prod.yml up -d"
-echo ""
-echo "로그 확인:"
-echo "  docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006"
-echo ""
-echo "전체 중지:"
-echo "  docker compose -f docker-compose.simulator-prod.yml down"
+
+read -p "시뮬레이터를 바로 시작할까요? (Y/n): " start_now
+
+if [ "$start_now" != "n" ] && [ "$start_now" != "N" ]; then
+    echo ""
+    echo "시뮬레이터 시작 중..."
+    docker compose -f docker-compose.simulator-prod.yml up -d
+    echo ""
+    echo "로그 확인:"
+    echo "  docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006"
+    echo ""
+    echo "전체 중지:"
+    echo "  docker compose -f docker-compose.simulator-prod.yml down"
+else
+    echo ""
+    echo "시뮬레이터 시작:"
+    echo "  docker compose -f docker-compose.simulator-prod.yml up -d"
+    echo ""
+    echo "로그 확인:"
+    echo "  docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006"
+    echo ""
+    echo "전체 중지:"
+    echo "  docker compose -f docker-compose.simulator-prod.yml down"
+fi
+
 echo ""
 echo "설정 수정이 필요하면 $ENV_FILE 파일을 직접 편집해주세요."
