@@ -76,7 +76,7 @@ if [ "$start_now" != "n" ] && [ "$start_now" != "N" ]; then
     docker compose -f docker-compose.simulator-prod.yml up -d
     echo ""
     echo "로그 확인:"
-    echo "  docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006"
+    echo "  docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-011"
     echo ""
     echo "전체 중지:"
     echo "  docker compose -f docker-compose.simulator-prod.yml down"
@@ -86,7 +86,7 @@ else
     echo "  docker compose -f docker-compose.simulator-prod.yml up -d"
     echo ""
     echo "로그 확인:"
-    echo "  docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006"
+    echo "  docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-011"
     echo ""
     echo "전체 중지:"
     echo "  docker compose -f docker-compose.simulator-prod.yml down"
