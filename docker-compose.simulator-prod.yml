@@ -1,13 +1,13 @@
 name: kobot-sim-prod
 
 services:
-  # KOBOT 시뮬레이터 #11 - 부산항 순찰 (프로덕션)
-  kobot-sim-prod-011:
+  # KOBOT 시뮬레이터 #6 - 부산항 순찰 (프로덕션)
+  kobot-sim-prod-006:
     build:
       context: .
       dockerfile: docker/Dockerfile.kobot
-    container_name: kobot-sim-prod-011
-    hostname: kobot-sim-prod-011
+    container_name: kobot-sim-prod-006
+    hostname: kobot-sim-prod-006
     env_file:
       - .env.simulator.prod
     volumes:
@@ -26,15 +26,15 @@ services:
     networks:
       - ondeviceai-simulator_kobot-network
     restart: unless-stopped
-    command: /bin/bash /root/scripts/start_kobot.sh 011
+    command: /bin/bash /root/scripts/start_kobot.sh 006
 
-  # KOBOT 시뮬레이터 #12 - 부산항 남항 정찰
-  kobot-sim-prod-012:
+  # KOBOT 시뮬레이터 #7 - 부산항 남항 정찰
+  kobot-sim-prod-007:
     build:
       context: .
       dockerfile: docker/Dockerfile.kobot
-    container_name: kobot-sim-prod-012
-    hostname: kobot-sim-prod-012
+    container_name: kobot-sim-prod-007
+    hostname: kobot-sim-prod-007
     env_file:
       - .env.simulator.prod
     volumes:
@@ -47,15 +47,15 @@ services:
     networks:
       - ondeviceai-simulator_kobot-network
     restart: unless-stopped
-    command: /bin/bash /root/scripts/start_kobot.sh 012
+    command: /bin/bash /root/scripts/start_kobot.sh 007
 
-  # KOBOT 시뮬레이터 #13 - 정박 (배터리 충전 시뮬레이션)
-  kobot-sim-prod-013:
+  # KOBOT 시뮬레이터 #8 - 정박 (배터리 충전 시뮬레이션)
+  kobot-sim-prod-008:
     build:
       context: .
       dockerfile: docker/Dockerfile.kobot
-    container_name: kobot-sim-prod-013
-    hostname: kobot-sim-prod-013
+    container_name: kobot-sim-prod-008
+    hostname: kobot-sim-prod-008
     env_file:
       - .env.simulator.prod
     volumes:
@@ -68,15 +68,15 @@ services:
     networks:
       - ondeviceai-simulator_kobot-network
     restart: unless-stopped
-    command: /bin/bash /root/scripts/start_kobot.sh 013
+    command: /bin/bash /root/scripts/start_kobot.sh 008
 
-  # KOBOT 시뮬레이터 #14 - 해양 쓰레기 수거 미션
-  kobot-sim-prod-014:
+  # KOBOT 시뮬레이터 #9 - 해양 쓰레기 수거 미션
+  kobot-sim-prod-009:
     build:
       context: .
       dockerfile: docker/Dockerfile.kobot
-    container_name: kobot-sim-prod-014
-    hostname: kobot-sim-prod-014
+    container_name: kobot-sim-prod-009
+    hostname: kobot-sim-prod-009
     env_file:
       - .env.simulator.prod
     volumes:
@@ -89,15 +89,15 @@ services:
     networks:
       - ondeviceai-simulator_kobot-network
     restart: unless-stopped
-    command: /bin/bash /root/scripts/start_kobot.sh 014
+    command: /bin/bash /root/scripts/start_kobot.sh 009
 
-  # KOBOT 시뮬레이터 #15 - 야간 순찰
-  kobot-sim-prod-015:
+  # KOBOT 시뮬레이터 #10 - 야간 순찰
+  kobot-sim-prod-010:
     build:
       context: .
       dockerfile: docker/Dockerfile.kobot
-    container_name: kobot-sim-prod-015
-    hostname: kobot-sim-prod-015
+    container_name: kobot-sim-prod-010
+    hostname: kobot-sim-prod-010
     env_file:
       - .env.simulator.prod
     volumes:
@@ -110,7 +110,7 @@ services:
     networks:
       - ondeviceai-simulator_kobot-network
     restart: unless-stopped
-    command: /bin/bash /root/scripts/start_kobot.sh 015
+    command: /bin/bash /root/scripts/start_kobot.sh 010
 
 networks:
   ondeviceai-simulator_kobot-network:
@@ -127,11 +127,11 @@ networks:
 #   1. 전체 5대 시작:
 #      docker compose -f docker-compose.simulator-prod.yml up -d
 #
-#   2. 특정 KOBOT만 시작 (예: #11번):
-#      docker compose -f docker-compose.simulator-prod.yml up -d kobot-sim-prod-011
+#   2. 특정 KOBOT만 시작 (예: #6번):
+#      docker compose -f docker-compose.simulator-prod.yml up -d kobot-sim-prod-006
 #
 #   3. 로그 확인:
-#      docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-011
+#      docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-006
 #
 #   4. 전체 중지:
 #      docker compose -f docker-compose.simulator-prod.yml down

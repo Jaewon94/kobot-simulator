@@ -1,13 +1,15 @@
 #!/bin/bash
 # KOBOT 시뮬레이터 카메라 스트리밍 스크립트
 #
-# FFmpeg을 사용하여 3채널 카메라 스트림을 MediaMTX로 전송합니다.
+# FFmpeg을 사용하여 5채널 카메라 스트림을 MediaMTX로 전송합니다.
 # 실제 KOBOT의 카메라를 시뮬레이션하기 위해 각 카메라별로 다른 테스트 패턴을 사용합니다.
 #
-# 📸 카메라 구성:
-#   - cam1: 주행용 카메라 (컬러 바 패턴)
-#   - cam2: 인식용 카메라 1 (Mandelbrot 프랙탈 애니메이션)
-#   - cam3: 인식용 카메라 2 (Game of Life 애니메이션)
+# 📸 카메라 구성 (5대):
+#   - cam1: 비전인식 카메라 (컬러 바 패턴)
+#   - cam2: 일반 카메라 1 (RGB 그라데이션)
+#   - cam3: 일반 카메라 2 (Game of Life 애니메이션)
+#   - cam4: 일반 카메라 3 (Mandelbrot 프랙탈)
+#   - cam5: 일반 카메라 4 (SMPTE 바 패턴)
 #
 # 사용법:
 #   bash fake_stream.sh <KOBOT_NAMESPACE> <MEDIAMTX_HOST> <MEDIAMTX_PORT>
@@ -43,7 +45,7 @@ CAMERA_FPS=${CAMERA_FPS:-30}
 CAMERA_BITRATE=${CAMERA_BITRATE:-2M}
 
 echo "=========================================="
-echo "KOBOT Camera Streaming Simulator"
+echo "KOBOT Camera Streaming Simulator (5ch)"
 echo "=========================================="
 echo "Namespace:    ${KOBOT_NAMESPACE}"
 echo "MediaMTX:     ${MEDIAMTX_HOST}:${MEDIAMTX_PORT}"
@@ -58,10 +60,10 @@ echo "=========================================="
 # FFmpeg을 사용하여 각 카메라별로 다른 테스트 패턴을 RTMP로 스트리밍합니다.
 #
 # 인자:
-#   $1: 카메라 번호 (1, 2, 3)
+#   $1: 카메라 번호 (1, 2, 3, 4, 5)
 #
 # RTMP URL 형식:
-#   rtmp://{MEDIAMTX_HOST}:{MEDIAMTX_PORT}/koai/{namespace}/live/cam{1~3}
+#   rtmp://{MEDIAMTX_HOST}:{MEDIAMTX_PORT}/koai/{namespace}/live/cam{1~5}
 stream_camera() {
     local CAM_NUM=$1
     local RTMP_URL="rtmp://${MEDIAMTX_HOST}:${MEDIAMTX_PORT}/koai/${KOBOT_NAMESPACE}/live/cam${CAM_NUM}"
@@ -71,25 +73,39 @@ stream_camera() {
     # 카메라별로 다른 테스트 패턴 선택
     case ${CAM_NUM} in
         1)
-            # 📹 CAM1: 주행용 카메라 - 컬러 바 패턴 (testsrc2)
-            # 움직이는 그라데이션으로 주행 화면 시뮬레이션
+            # 📹 CAM1: 비전인식 카메라 - 컬러 바 패턴 (testsrc2)
+            # 움직이는 그라데이션으로 비전인식 화면 시뮬레이션
             local VIDEO_FILTER="testsrc2=size=${CAMERA_RESOLUTION}:rate=${CAMERA_FPS}"
-            local CAM_DESC="CAM1 (Navigation)"
+            local CAM_DESC="CAM1 (Vision)"
             local CAM_COLOR="yellow"
             ;;
         2)
-            # 📹 CAM2: 인식용 카메라 1 - RGB 테스트 패턴
-            # 컬러 그라데이션으로 객체 인식 시뮬레이션
+            # 📹 CAM2: 일반 카메라 1 - RGB 테스트 패턴
+            # 컬러 그라데이션으로 일반 영상 시뮬레이션
             local VIDEO_FILTER="rgbtestsrc=size=${CAMERA_RESOLUTION}:rate=${CAMERA_FPS}"
-            local CAM_DESC="CAM2 (Recognition-1)"
+            local CAM_DESC="CAM2 (General-1)"
             local CAM_COLOR="cyan"
             ;;
         3)
-            # 📹 CAM3: 인식용 카메라 2 - Game of Life 애니메이션
+            # 📹 CAM3: 일반 카메라 2 - Game of Life 애니메이션
             # 셀룰러 오토마타로 동적 환경 시뮬레이션
             local VIDEO_FILTER="life=size=${CAMERA_RESOLUTION}:rate=${CAMERA_FPS}:random_seed=1"
-            local CAM_DESC="CAM3 (Recognition-2)"
+            local CAM_DESC="CAM3 (General-2)"
             local CAM_COLOR="lime"
+            ;;
+        4)
+            # 📹 CAM4: 일반 카메라 3 - Mandelbrot 프랙탈
+            # 프랙탈 애니메이션으로 정적 관찰 시뮬레이션
+            local VIDEO_FILTER="mandelbrot=size=${CAMERA_RESOLUTION}:rate=${CAMERA_FPS}"
+            local CAM_DESC="CAM4 (General-3)"
+            local CAM_COLOR="orange"
+            ;;
+        5)
+            # 📹 CAM5: 일반 카메라 4 - SMPTE 바 패턴
+            # 방송용 표준 패턴으로 보조 영상 시뮬레이션
+            local VIDEO_FILTER="smptebars=size=${CAMERA_RESOLUTION}:rate=${CAMERA_FPS}"
+            local CAM_DESC="CAM5 (General-4)"
+            local CAM_COLOR="magenta"
             ;;
         *)
             echo "[Camera ${CAM_NUM}] Error: Invalid camera number"
@@ -98,7 +114,7 @@ stream_camera() {
     esac
 
     # FFmpeg 테스트 패턴 생성 및 RTMP 스트리밍
-    # 1. 카메라별 고유 테스트 패턴 생성 (testsrc2, mandelbrot, life)
+    # 1. 카메라별 고유 테스트 패턴 생성
     # 2. drawtext: 카메라 정보 오버레이 (namespace, 카메라 설명, 타임스탬프)
     # 3. H.264 인코딩 (baseline profile, 낮은 레이턴시)
     # 4. RTMP 전송 (reconnect on error)
@@ -121,7 +137,7 @@ boxborderw=5:x=10:y=h-th-10" \
         -profile:v baseline \
         -b:v ${CAMERA_BITRATE} \
         -maxrate ${CAMERA_BITRATE} \
-        -bufsize $((2 * ${CAMERA_BITRATE%M} * 1024))k \
+        -bufsize ${CAMERA_BITRATE} \
         -g $((CAMERA_FPS * 2)) \
         -keyint_min ${CAMERA_FPS} \
         -sc_threshold 0 \
@@ -167,7 +183,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # ============================================================================
-# 3채널 카메라 스트리밍 시작
+# 5채널 카메라 스트리밍 시작
 # ============================================================================
 CAMERA_PIDS=()
 
@@ -192,9 +208,11 @@ echo "MediaMTX is ready!"
 # 각 채널별로 약간의 지연을 두고 시작 (동시 시작으로 인한 부하 방지)
 echo ""
 echo "Starting camera streams with unique patterns..."
-echo "  📹 CAM1: testsrc2 (Color bars - Navigation)"
-echo "  📹 CAM2: mandelbrot (Fractal - Recognition-1)"
-echo "  📹 CAM3: life (Game of Life - Recognition-2)"
+echo "  📹 CAM1: testsrc2 (Color bars - Vision)"
+echo "  📹 CAM2: rgbtestsrc (RGB gradient - General-1)"
+echo "  📹 CAM3: life (Game of Life - General-2)"
+echo "  📹 CAM4: mandelbrot (Fractal - General-3)"
+echo "  📹 CAM5: smptebars (SMPTE bars - General-4)"
 echo ""
 
 stream_camera 1
@@ -206,6 +224,12 @@ sleep 2
 stream_camera 3
 sleep 2
 
+stream_camera 4
+sleep 2
+
+stream_camera 5
+sleep 2
+
 echo ""
 echo "=========================================="
 echo "All camera streams started successfully!"
@@ -214,11 +238,15 @@ echo "RTMP URLs (KOBOT → MediaMTX):"
 echo "  Camera 1: rtmp://${MEDIAMTX_HOST}:${MEDIAMTX_PORT}/koai/${KOBOT_NAMESPACE}/live/cam1"
 echo "  Camera 2: rtmp://${MEDIAMTX_HOST}:${MEDIAMTX_PORT}/koai/${KOBOT_NAMESPACE}/live/cam2"
 echo "  Camera 3: rtmp://${MEDIAMTX_HOST}:${MEDIAMTX_PORT}/koai/${KOBOT_NAMESPACE}/live/cam3"
+echo "  Camera 4: rtmp://${MEDIAMTX_HOST}:${MEDIAMTX_PORT}/koai/${KOBOT_NAMESPACE}/live/cam4"
+echo "  Camera 5: rtmp://${MEDIAMTX_HOST}:${MEDIAMTX_PORT}/koai/${KOBOT_NAMESPACE}/live/cam5"
 echo ""
 echo "WebRTC URLs (Client playback):"
 echo "  Camera 1: http://${MEDIAMTX_HOST}:8889/koai/${KOBOT_NAMESPACE}/live/cam1/whep"
 echo "  Camera 2: http://${MEDIAMTX_HOST}:8889/koai/${KOBOT_NAMESPACE}/live/cam2/whep"
 echo "  Camera 3: http://${MEDIAMTX_HOST}:8889/koai/${KOBOT_NAMESPACE}/live/cam3/whep"
+echo "  Camera 4: http://${MEDIAMTX_HOST}:8889/koai/${KOBOT_NAMESPACE}/live/cam4/whep"
+echo "  Camera 5: http://${MEDIAMTX_HOST}:8889/koai/${KOBOT_NAMESPACE}/live/cam5/whep"
 echo "=========================================="
 echo ""
 echo "Press Ctrl+C to stop all streams..."
