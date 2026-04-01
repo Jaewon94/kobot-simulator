@@ -172,7 +172,9 @@ docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-011
   },
   "angle_min": 0.0,
   "angle_max": 6.2832,
-  "angle_increment": 0.0175,
+  "angle_increment": 0.175,
+  "time_increment": 0.0,
+  "scan_time": 0.1,
   "range_min": 0.1,
   "range_max": 30.0,
   "ranges": [3.45, 3.42, 5.1, 12.0],
@@ -221,9 +223,9 @@ docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-011
   "cmd": "start",
   "cmd_id": "cmd_1234567890",
   "waypoints": [
-    {"lat": 35.1158, "lng": 129.0403},
-    {"lat": 35.1165, "lng": 129.0410},
-    {"lat": 35.1170, "lng": 129.0415}
+    {"latitude": 35.1158, "longitude": 129.0403},
+    {"latitude": 35.1165, "longitude": 129.0410},
+    {"latitude": 35.1170, "longitude": 129.0415}
   ]
 }
 ```
