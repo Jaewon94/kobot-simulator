@@ -117,75 +117,85 @@ docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-011
 
 시뮬레이터는 실제 KOBOT과 동일한 MQTT 토픽으로 센서 데이터를 발행합니다.
 
-> **중요**: 모든 MQTT 토픽은 선행 슬래시(`/`) 없이 사용됩니다. (예: `kobot11/sensors/gps`)
+> **중요**: 모든 MQTT 토픽은 `koai/` prefix를 사용합니다. (예: `koai/kobot11/gps`)
 
-### GPS (`{namespace}/sensors/gps`)
+### GPS (`koai/{namespace}/gps`)
 
-발행 주기: 환경변수 `GPS_RATE`로 조정 (기본 1.0Hz = 1초당 1회)
-
-```json
-{
-  "type": "sensor_data",
-  "namespace": "kobot11",
-  "timestamp": "2025-10-11T12:34:56.789Z",
-  "data": {
-    "sensor_type": "gps",
-    "latitude": 35.1158,
-    "longitude": 129.0403,
-    "altitude": 0.5,
-    "gps_status": 3,
-    "num_satellites": 12
-  }
-}
-```
-
-### IMU (`{namespace}/sensors/imu`)
-
-발행 주기: 환경변수 `IMU_RATE`로 조정 (기본 0.2Hz = 5초당 1회)
+발행 주기: 환경변수 `GPS_RATE`로 조정 (현재 1.0Hz = 1초당 1회), QoS 0
 
 ```json
 {
-  "type": "sensor_data",
-  "namespace": "kobot11",
-  "timestamp": "2025-10-11T12:34:56.789Z",
-  "data": {
-    "sensor_type": "imu",
-    "orientation": {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0},
-    "angular_velocity": {"x": 0.01, "y": -0.02, "z": 0.03},
-    "linear_acceleration": {"x": 0.05, "y": 0.02, "z": 9.81}
-  }
+  "ts_iso": "2026-04-01T10:30:00.123456+00:00",
+  "header": {
+    "stamp": { "sec": 1774935000, "nanosec": 123456000 },
+    "frame_id": "gps_antenna"
+  },
+  "status": { "status": 2, "service": 1 },
+  "latitude": 35.1158,
+  "longitude": 129.0403,
+  "altitude": 0.5,
+  "position_covariance": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+  "position_covariance_type": 2
 }
 ```
 
-### LiDAR (`{namespace}/sensors/lidar`)
+### IMU (`koai/{namespace}/imu`)
 
-발행 주기: 환경변수 `LIDAR_RATE`로 조정 (기본 0.33Hz = 3초당 1회)
+발행 주기: 환경변수 `IMU_RATE`로 조정 (기본 0.2Hz = 5초당 1회), QoS 0
 
 ```json
 {
-  "type": "sensor_data",
-  "namespace": "kobot11",
-  "timestamp": "2025-10-11T12:34:56.789Z",
-  "data": {
-    "sensor_type": "lidar",
-    "ranges": [2.5, 3.1, 4.2],
-    "min_distance": 2.5,
-    "obstacle_count": 3
-  }
+  "ts_iso": "2026-04-01T10:30:05.456789+00:00",
+  "header": {
+    "stamp": { "sec": 1774935005, "nanosec": 456789000 },
+    "frame_id": "imu"
+  },
+  "orientation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 },
+  "orientation_covariance": [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01],
+  "angular_velocity": { "x": 0.01, "y": -0.02, "z": 0.03 },
+  "angular_velocity_covariance": [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01],
+  "linear_acceleration": { "x": 0.05, "y": 0.02, "z": 9.81 },
+  "linear_acceleration_covariance": [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
 }
 ```
 
-### System Status (`{namespace}/status`)
+### LiDAR (`koai/{namespace}/lidar`)
+
+발행 주기: 환경변수 `LIDAR_RATE`로 조정 (기본 0.33Hz = 3초당 1회), QoS 0
+
+```json
+{
+  "ts_iso": "2026-04-01T10:30:03.789012+00:00",
+  "header": {
+    "stamp": { "sec": 1774935003, "nanosec": 789012000 },
+    "frame_id": "lidar"
+  },
+  "angle_min": 0.0,
+  "angle_max": 6.2832,
+  "angle_increment": 0.0175,
+  "range_min": 0.1,
+  "range_max": 30.0,
+  "ranges": [3.45, 3.42, 5.1, 12.0],
+  "intensities": [100, 105, 80, 50]
+}
+```
+
+> **참고**: ranges/intensities는 10x 샘플링 (원본의 10개당 1개만 전송)
+
+### System Status (`koai/{namespace}/status`)
 
 > **참고**: Status 토픽의 항목과 포맷은 아직 협의 중이며, 현재 시뮬레이터에서는 배터리 잔량만 임시로 발행하고 있습니다. 항목이 확정되면 업데이트 예정입니다.
 
-발행 주기: 환경변수 `STATUS_RATE`로 조정 (기본 0.2Hz = 5초당 1회)
+발행 주기: 환경변수 `STATUS_RATE`로 조정 (기본 0.2Hz = 5초당 1회), QoS 0
 
 ```json
 {
-  "type": "status_update",
-  "timestamp": 1760504493.028899,
-  "battery_percentage": 85
+  "ts_iso": "2026-04-01T10:30:10.000000+00:00",
+  "header": {
+    "stamp": { "sec": 1774935010, "nanosec": 0 },
+    "frame_id": "status"
+  },
+  "battery_percentage": 85.5
 }
 ```
 
@@ -193,36 +203,81 @@ docker compose -f docker-compose.simulator-prod.yml logs -f kobot-sim-prod-011
 
 ## 명령 수신 및 ACK
 
-시뮬레이터는 관제 시스템의 명령을 수신하고 ACK를 자동 응답합니다.
+시뮬레이터는 관제 시스템의 자율주행 명령을 수신하고 ACK를 자동 응답합니다.
 
-### 명령 수신 (`{namespace}/command`)
+### 명령 토픽
 
-```json
-{
-  "type": "stop_autodrive",
-  "namespace": "kobot11",
-  "timestamp": "2025-10-11T12:34:56.789Z",
-  "data": {
-    "command_id": "cmd_1234567890",
-    "params": {}
-  }
-}
-```
+- **수신**: `koai/{namespace}/cmd/autodrive` (QoS 1)
+- **ACK 응답**: `koai/{namespace}/ack/autodrive` (QoS 1)
 
-### ACK 응답 (`{namespace}/command/ack`)
+### 자율주행 시작 (웨이포인트 전송)
+
+관제 시스템에서 웨이포인트 목록과 함께 시작 명령을 보내면, 시뮬레이터가 해당 좌표로 GPS 이동을 시뮬레이션합니다.
+
+**명령:**
 
 ```json
 {
-  "type": "stop_autodrive",
-  "namespace": "kobot11",
-  "timestamp": "2025-10-11T12:34:57.123Z",
-  "data": {
-    "command_id": "cmd_1234567890",
-    "status": "success",
-    "message": "Autodrive stopped"
-  }
+  "cmd": "start",
+  "cmd_id": "cmd_1234567890",
+  "waypoints": [
+    {"lat": 35.1158, "lng": 129.0403},
+    {"lat": 35.1165, "lng": 129.0410},
+    {"lat": 35.1170, "lng": 129.0415}
+  ]
 }
 ```
+
+**ACK 응답:**
+
+```json
+{
+  "ok": true,
+  "cmd_id": "cmd_1234567890",
+  "error": "",
+  "ts_iso": "2026-04-01T10:30:00.123Z"
+}
+```
+
+### 자율주행 정지
+
+**명령:**
+
+```json
+{
+  "cmd": "stop",
+  "cmd_id": "cmd_1234567891"
+}
+```
+
+**ACK 응답:**
+
+```json
+{
+  "ok": true,
+  "cmd_id": "cmd_1234567891",
+  "error": "",
+  "ts_iso": "2026-04-01T10:35:00.456Z"
+}
+```
+
+### 시뮬레이터 동작
+
+| 명령 | 시뮬레이터 동작 |
+|------|-------------|
+| `start` + 웨이포인트 | GPS 좌표가 웨이포인트를 향해 순차 이동 (3m 이내 도달 시 다음 포인트) |
+| `start` (주행 중 재수신) | 기존 경로 대체, 새 웨이포인트로 이동 재개 |
+| `stop` | 현재 위치에서 정지, 웨이포인트 진행 일시정지 |
+| 모든 웨이포인트 도달 | 자동 정지 (idle 상태 전환) |
+
+### ACK 필드 설명
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `ok` | boolean | 명령 처리 성공 여부 |
+| `cmd_id` | string | 수신한 명령의 ID (그대로 반환) |
+| `error` | string | 실패 시 에러 메시지 (성공 시 빈 문자열) |
+| `ts_iso` | string | ACK 발행 시각 (ISO 8601 UTC) |
 
 ---
 
@@ -417,24 +472,24 @@ KOBOT 카메라 에러 발생
 
 ## MQTT 토픽 구조
 
-| 토픽 | 방향 | 설명 |
-|------|------|------|
-| `{namespace}/sensors/gps` | KOBOT → 관제 | GPS 위치 데이터 |
-| `{namespace}/sensors/imu` | KOBOT → 관제 | IMU 자세 데이터 |
-| `{namespace}/sensors/lidar` | KOBOT → 관제 | LiDAR 요약 데이터 |
-| `{namespace}/status` | KOBOT → 관제 | 시스템 상태 |
-| `{namespace}/command` | 관제 → KOBOT | 제어 명령 |
-| `{namespace}/command/ack` | KOBOT → 관제 | 명령 ACK 응답 |
-| `koai/{namespace}/error/camera` | KOBOT → 관제 | 카메라 에러 보고 |
+| 토픽 | 방향 | QoS | 설명 |
+|------|------|-----|------|
+| `koai/{namespace}/gps` | KOBOT → 관제 | 0 | GPS 위치 데이터 |
+| `koai/{namespace}/imu` | KOBOT → 관제 | 0 | IMU 자세 데이터 |
+| `koai/{namespace}/lidar` | KOBOT → 관제 | 0 | LiDAR 장애물 데이터 |
+| `koai/{namespace}/status` | KOBOT → 관제 | 0 | 시스템 상태 (배터리) |
+| `koai/{namespace}/cmd/autodrive` | 관제 → KOBOT | 1 | 자율주행 명령 (start/stop + 웨이포인트) |
+| `koai/{namespace}/ack/autodrive` | KOBOT → 관제 | 1 | 명령 ACK 응답 |
+| `koai/{namespace}/error/camera` | KOBOT → 관제 | 1 | 카메라 에러 보고 |
 
 ### MQTT 메시지 확인
 
 ```bash
-# 특정 KOBOT의 전체 센서 데이터 구독
-mosquitto_sub -h {MQTT_BROKER} -t "kobot11/sensors/#" -u {username} -P {password}
+# 특정 KOBOT의 전체 데이터 구독
+mosquitto_sub -h {MQTT_BROKER} -t "koai/kobot11/#" -u {username} -P {password}
 
-# 상태 토픽 구독
-mosquitto_sub -h {MQTT_BROKER} -t "kobot11/status" -u {username} -P {password}
+# GPS만 구독
+mosquitto_sub -h {MQTT_BROKER} -t "koai/kobot11/gps" -u {username} -P {password}
 ```
 
 ---
