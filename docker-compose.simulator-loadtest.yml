@@ -1,0 +1,95 @@
+name: kobot-sim-loadtest
+
+# 부하 테스트용 시뮬레이터 (kobot111~115, 5대)
+# 720p/25fps/2Mbps, 컨테이너당 2GB 메모리
+# Docker Desktop 메모리 12GB 이상 권장
+
+x-kobot-common: &kobot-common
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.kobot
+  env_file:
+    - .env.simulator.loadtest
+  environment:
+    CAMERA_RESOLUTION: "1280x720"
+    CAMERA_FPS: "25"
+    CAMERA_BITRATE: "2000k"
+  volumes:
+    - ./ros2_ws:/root/ros2_ws
+    - ./mqtt_bridge:/root/mqtt_bridge
+    - ./camera:/root/camera
+    - ./scenarios:/root/scenarios
+    - ./config:/root/config
+    - ./scripts:/root/scripts
+  networks:
+    - kobot-loadtest-network
+  restart: unless-stopped
+  deploy:
+    resources:
+      limits:
+        memory: 2G
+      reservations:
+        memory: 1G
+
+services:
+  kobot-sim-lt-111:
+    <<: *kobot-common
+    container_name: kobot-sim-lt-111
+    hostname: kobot-sim-lt-111
+    command: /bin/bash /root/scripts/start_kobot.sh 111
+
+  kobot-sim-lt-112:
+    <<: *kobot-common
+    container_name: kobot-sim-lt-112
+    hostname: kobot-sim-lt-112
+    command: /bin/bash /root/scripts/start_kobot.sh 112
+
+  kobot-sim-lt-113:
+    <<: *kobot-common
+    container_name: kobot-sim-lt-113
+    hostname: kobot-sim-lt-113
+    command: /bin/bash /root/scripts/start_kobot.sh 113
+
+  kobot-sim-lt-114:
+    <<: *kobot-common
+    container_name: kobot-sim-lt-114
+    hostname: kobot-sim-lt-114
+    command: /bin/bash /root/scripts/start_kobot.sh 114
+
+  kobot-sim-lt-115:
+    <<: *kobot-common
+    container_name: kobot-sim-lt-115
+    hostname: kobot-sim-lt-115
+    command: /bin/bash /root/scripts/start_kobot.sh 115
+
+networks:
+  kobot-loadtest-network:
+    driver: bridge
+# ============================================================================
+# 부하 테스트 사용법
+# ============================================================================
+#
+# 사전 준비:
+#   1. Docker Desktop 메모리 12GB 이상 설정
+#   2. .env.simulator.loadtest 파일 생성 (아래 내용 복사)
+#   3. 관제 시스템 실행 중이어야 함
+#
+# 실행:
+#   # 전체 5대
+#   docker compose -f docker-compose.simulator-loadtest.yml up -d
+#
+#   # 1대씩 추가
+#   docker compose -f docker-compose.simulator-loadtest.yml up -d kobot-sim-lt-110
+#
+#   # 로그 확인
+#   docker compose -f docker-compose.simulator-loadtest.yml logs -f kobot-sim-lt-110
+#
+#   # 리소스 모니터링
+#   docker stats
+#
+#   # 전체 중지
+#   docker compose -f docker-compose.simulator-loadtest.yml down
+#
+# 네임스페이스: kobot111 ~ kobot115
+# 카메라: 5채널 × 5대 = 25스트림 (720p/25fps/2Mbps)
+# 총 대역폭: ~50Mbps

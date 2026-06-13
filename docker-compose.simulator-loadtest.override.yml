@@ -1,0 +1,24 @@
+name: kobot-sim-loadtest
+
+# 영상 스트림 OFF 용 override.
+# docker-compose.simulator-loadtest.yml 의 environment.CAMERA_AUTO_START="true" 를
+# 덮어써서 부팅 시 fake_stream.sh 자동 실행을 막는다.
+#
+# 사용법: docker compose -f docker-compose.simulator-loadtest.yml \
+#                       -f docker-compose.simulator-loadtest.override.yml up -d
+
+x-camera-off: &camera-off
+  environment:
+    CAMERA_AUTO_START: "false"
+
+services:
+  kobot-sim-lt-111:
+    <<: *camera-off
+  kobot-sim-lt-112:
+    <<: *camera-off
+  kobot-sim-lt-113:
+    <<: *camera-off
+  kobot-sim-lt-114:
+    <<: *camera-off
+  kobot-sim-lt-115:
+    <<: *camera-off

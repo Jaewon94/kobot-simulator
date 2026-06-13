@@ -1,0 +1,21 @@
+# 임시 override: 운영 시뮬레이터를 카메라 OFF 상태로 기동
+# .env.simulator.prod 의 CAMERA_AUTO_START=true 를 environment 로 덮어씀
+# (compose merge 규칙상 environment 가 env_file 보다 우선)
+name: kobot-sim-prod
+
+services:
+  kobot-sim-prod-006:
+    environment:
+      CAMERA_AUTO_START: "false"
+  kobot-sim-prod-007:
+    environment:
+      CAMERA_AUTO_START: "false"
+  kobot-sim-prod-008:
+    environment:
+      CAMERA_AUTO_START: "false"
+  kobot-sim-prod-009:
+    environment:
+      CAMERA_AUTO_START: "false"
+  kobot-sim-prod-010:
+    environment:
+      CAMERA_AUTO_START: "false"

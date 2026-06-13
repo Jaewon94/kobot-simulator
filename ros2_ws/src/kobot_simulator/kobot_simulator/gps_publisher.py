@@ -22,6 +22,9 @@ import json
 import math
 import os
 import random
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any
 
 import rclpy
 from rclpy.node import Node
@@ -68,8 +71,11 @@ class GPSPublisher(Node):
         self.time_elapsed = 0.0
         # 실제 해양 무인로봇 속도: 2노트 = 1.0m/s (저속 순찰)
         # GPS 1Hz 기준 → 1초에 1.0m 이동 = 0.000009도 (위도 1도 = 111km)
-        self.speed = 0.00001  # 위도/경도 변화율 (1.0m/s @ 1Hz = 2노트)
+        self.base_speed = 0.00001  # 위도/경도 변화율 (1.0m/s @ 1Hz = 2노트)
+        self.speed_multiplier = float(os.getenv('GPS_SPEED_MULTIPLIER', '1.0'))
+        self.speed = self.base_speed * self.speed_multiplier
         self.heading = 0.0  # 진행 방향 (라디안)
+        self.state_lock = threading.Lock()
 
         # 자율주행 상태
         self.target_waypoints = []
@@ -95,6 +101,10 @@ class GPSPublisher(Node):
             10
         )
 
+        self.control_server = None
+        self.control_server_thread = None
+        self._start_control_server()
+
         # 타이머 생성 (주기적 발행)
         timer_period = 1.0 / self.update_rate  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
@@ -111,6 +121,156 @@ class GPSPublisher(Node):
         self.get_logger().info(
             f'  발행 주기: {self.update_rate} Hz'
         )
+        self.get_logger().info(
+            f'  속도 배율: {self.speed_multiplier:g}x'
+        )
+
+    def _start_control_server(self):
+        """로컬 시뮬레이터 개발 제어 HTTP 서버를 시작합니다."""
+        raw_port = os.getenv('SIMULATOR_CONTROL_PORT', '')
+        if not raw_port:
+            return
+
+        try:
+            control_port = int(raw_port)
+        except ValueError:
+            self.get_logger().warn(f'잘못된 SIMULATOR_CONTROL_PORT 값: {raw_port}')
+            return
+
+        if control_port <= 0:
+            return
+
+        gps_publisher = self
+
+        class SimulatorControlHandler(BaseHTTPRequestHandler):
+            """GPS 노드 상태를 런타임에 조정하는 개발 전용 핸들러."""
+
+            def log_message(self, format: str, *args: Any) -> None:
+                return
+
+            def do_POST(self) -> None:
+                try:
+                    payload = self._read_json_body()
+                    if self.path == '/position':
+                        result = gps_publisher._apply_simulator_position(payload)
+                    elif self.path == '/speed':
+                        result = gps_publisher._apply_simulator_speed(payload)
+                    else:
+                        self._write_json(404, {'ok': False, 'error': 'unknown path'})
+                        return
+                    self._write_json(200, result)
+                except ValueError as exc:
+                    self._write_json(400, {'ok': False, 'error': str(exc)})
+
+            def _read_json_body(self) -> dict[str, Any]:
+                content_length = int(self.headers.get('Content-Length', '0'))
+                raw_body = self.rfile.read(content_length).decode('utf-8')
+                try:
+                    payload = json.loads(raw_body or '{}')
+                except json.JSONDecodeError as exc:
+                    raise ValueError('payload must be valid JSON') from exc
+                if not isinstance(payload, dict):
+                    raise ValueError('payload must be a JSON object')
+                return payload
+
+            def _write_json(self, status_code: int, payload: dict[str, Any]) -> None:
+                body = json.dumps(payload).encode('utf-8')
+                self.send_response(status_code)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        try:
+            self.control_server = ThreadingHTTPServer(
+                ('0.0.0.0', control_port),
+                SimulatorControlHandler,
+            )
+        except OSError as exc:
+            self.get_logger().error(f'시뮬레이터 제어 서버 시작 실패: {exc}')
+            return
+
+        self.control_server_thread = threading.Thread(
+            target=self.control_server.serve_forever,
+            daemon=True,
+        )
+        self.control_server_thread.start()
+        self.get_logger().info(
+            f'시뮬레이터 제어 서버 시작: http://0.0.0.0:{control_port}'
+        )
+
+    def _apply_simulator_position(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """개발 제어 요청으로 GPS 위치를 즉시 갱신합니다."""
+        latitude = self._require_finite_float(payload, 'latitude')
+        longitude = self._require_finite_float(payload, 'longitude')
+        altitude_value = payload.get('altitude', self.alt)
+        altitude = float(altitude_value)
+        if not math.isfinite(altitude):
+            raise ValueError('altitude must be finite')
+
+        if latitude < -90 or latitude > 90:
+            raise ValueError('latitude must be between -90 and 90')
+        if longitude < -180 or longitude > 180:
+            raise ValueError('longitude must be between -180 and 180')
+
+        hold = bool(payload.get('hold', True))
+
+        with self.state_lock:
+            self.lat = latitude
+            self.lon = longitude
+            self.alt = altitude
+            self.stationary_base_lat = latitude
+            self.stationary_base_lon = longitude
+
+            # 진행 중인 자율주행/일시정지 미션은 웨이포인트를 보존합니다.
+            if hold and self.scenario not in ('autodrive', 'idle'):
+                self.scenario = 'stationary'
+                self.target_waypoints = []
+                self.current_waypoint_index = 0
+
+        self.get_logger().info(
+            f'시뮬레이터 위치 주입: ({latitude:.8f}, {longitude:.8f}, {altitude:.2f}m), '
+            f'hold={hold}, scenario={self.scenario}'
+        )
+        return {
+            'ok': True,
+            'namespace': self.namespace,
+            'latitude': latitude,
+            'longitude': longitude,
+            'altitude': altitude,
+            'hold': hold,
+            'scenario': self.scenario,
+            'speed_multiplier': self.speed_multiplier,
+        }
+
+    def _apply_simulator_speed(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """개발 제어 요청으로 GPS 이동 속도 배율을 런타임에 변경합니다."""
+        speed_multiplier = self._require_finite_float(payload, 'speed_multiplier')
+        if speed_multiplier < 0.1 or speed_multiplier > 50.0:
+            raise ValueError('speed_multiplier must be between 0.1 and 50')
+
+        with self.state_lock:
+            self.speed_multiplier = speed_multiplier
+            self.speed = self.base_speed * speed_multiplier
+
+        self.get_logger().info(f'시뮬레이터 속도 배율 변경: {speed_multiplier:g}x')
+        return {
+            'ok': True,
+            'namespace': self.namespace,
+            'speed_multiplier': speed_multiplier,
+        }
+
+    def _require_finite_float(self, payload: dict[str, Any], key: str) -> float:
+        """JSON payload에서 유한한 float 값을 읽습니다."""
+        if key not in payload:
+            raise ValueError(f'{key} is required')
+        try:
+            value = float(payload[key])
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f'{key} must be a number') from exc
+        if not math.isfinite(value):
+            raise ValueError(f'{key} must be finite')
+        return value
 
     def timer_callback(self):
         """
@@ -363,6 +523,13 @@ class GPSPublisher(Node):
         self.lat += (delta_lat / distance) * move_distance
         self.lon += (delta_lon / distance) * move_distance
         self.alt = random.uniform(-0.5, 0.5)
+
+    def destroy_node(self):
+        """노드 종료 시 개발 제어 서버를 정리합니다."""
+        if self.control_server is not None:
+            self.control_server.shutdown()
+            self.control_server.server_close()
+        super().destroy_node()
 
 
 

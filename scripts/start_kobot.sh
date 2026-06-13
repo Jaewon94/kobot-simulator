@@ -40,15 +40,18 @@ INITIAL_ALT=${!INITIAL_ALT_VAR}
 SCENARIO=${!SCENARIO_VAR}
 MQTT_USERNAME=${!USERNAME_VAR}
 MQTT_PASSWORD=${!PASSWORD_VAR}
+SIMULATOR_CONTROL_PORT=${SIMULATOR_CONTROL_PORT:-0}
 
 # 환경 변수 확인
 echo "[KOBOT-$KOBOT_ID] Namespace: $NAMESPACE"
 echo "[KOBOT-$KOBOT_ID] MQTT Broker: $MQTT_BROKER:$MQTT_PORT"
+echo "[KOBOT-$KOBOT_ID] Simulator control port: $SIMULATOR_CONTROL_PORT"
 echo "[KOBOT-$KOBOT_ID] Starting all sensor nodes..."
 
 # 센서 노드 시작 (백그라운드)
 # 발행 주기 조정: DB 부하 감소를 위해 3~5초 간격으로 설정
 # GPS: 3초에 1번 (0.33 Hz)
+SIMULATOR_CONTROL_PORT=$SIMULATOR_CONTROL_PORT \
 /root/ros2_ws/install/kobot_simulator/lib/kobot_simulator/gps_publisher \
   --ros-args \
   -p namespace:=$NAMESPACE \

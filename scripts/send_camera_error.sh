@@ -56,7 +56,7 @@ if [ -z "$ERROR_MESSAGE" ]; then
         DEVICE_ERROR)      ERROR_MESSAGE="카메라 디바이스 응답 없음 (/dev/video0)" ;;
         RESOLUTION_ERROR)  ERROR_MESSAGE="1280x720 해상도 설정 실패" ;;
         NETWORK_ERROR)     ERROR_MESSAGE="RTMP 서버 연결 불가 (connection refused)" ;;
-        LOW_FRAMERATE)     ERROR_MESSAGE="프레임레이트 저하 (현재 5fps, 기준 15fps)" ;;
+        LOW_FRAMERATE)     ERROR_MESSAGE="프레임레이트 저하 (현재 5fps, 기준 25fps)" ;;
         *)                 ERROR_MESSAGE="알 수 없는 카메라 에러: ${ERROR_CODE}" ;;
     esac
 fi
